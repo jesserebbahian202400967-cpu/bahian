@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>Chair List</h1>
+    <button onclick="loadchairs()">Load All Chairs</button>
+    <ul id="list"></ul>
+
+    <h1>Add Chair</h1>
+    <input type="text" id="name" placeholder="name" />
+    <input type="text" id="description" placeholder="description" />
+    <button onclick="addChair()">Submit</button>
+  </body>
+
+  <script>
+    // Get all data list
+    async function loadchairs() {
+      // Fetch response from backend
+      const res = await fetch('http://localhost:3000/api/chairs');
+      // Parse response
+      const data = await res.json();
+
+      const list = document.getElementById('list');
+      list.innerHTML = '';
+
+      data.forEach((chair) => {
+        const li = document.createElement('li');
+        li.textContent = ` - CHAIR NAME: ${chair.name} - CHAIR DESCRIPTION: ${chair.description}`;
+        list.appendChild(li);
+      });
+    }
+
+    async function addChair() {
+      const name = document.getElementById('name').value;
+      const description = document.getElementById('description').value;
+
+      const res = await fetch('http://localhost:3000/api/chairs', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, description }),
+      });
+
+      const data = await res.json();
+      console.log(data);
+
+      loadchairs();
+    }
+  </script>
+</html>

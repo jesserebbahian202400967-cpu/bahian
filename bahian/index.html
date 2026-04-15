@@ -14,29 +14,30 @@
 
   <h1>📦 Product Inventory System</h1>
 
-  <!-- LOAD -->
+  <!-- LOAD ALL -->
   <div class="section">
+    <h3>All Products</h3>
     <button onclick="loadProducts()">Load Products</button>
   </div>
 
   <!-- SEARCH -->
   <div class="section">
-    <h3>Search Product</h3>
-    <input type="text" id="search" placeholder="Search name..." />
+    <h3>🔍 Search Product</h3>
+    <input type="text" id="search" placeholder="Search product name..." />
     <button onclick="searchProduct()">Search</button>
   </div>
 
   <!-- STATS -->
   <div class="section">
-    <h3>Stats</h3>
+    <h3>📊 System Stats</h3>
     <button onclick="loadStats()">Load Stats</button>
     <p id="stats"></p>
   </div>
 
   <!-- TOP -->
   <div class="section">
-    <h3>Top Products</h3>
-    <button onclick="loadTop()">Show Top</button>
+    <h3>🔥 Top Products</h3>
+    <button onclick="loadTop()">Show Top Products</button>
     <ul id="topList"></ul>
   </div>
 
@@ -98,8 +99,10 @@ function display(data) {
   });
 }
 
-// ================= ADD (FIXED - THIS WAS YOUR ERROR) =================
+// ================= FIXED ADD PRODUCT =================
 async function addProduct() {
+
+  // ✅ FIX: correct way to get values
   const name = document.getElementById("name").value;
   const brand = document.getElementById("brand").value;
   const price = document.getElementById("price").value;
@@ -112,9 +115,7 @@ async function addProduct() {
 
   await fetch(API, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
       name,
       brand,
@@ -147,9 +148,7 @@ async function updateProduct(id) {
 
   await fetch(`${API}/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json"
-    },
+    headers: {"Content-Type":"application/json"},
     body: JSON.stringify({
       name,
       brand,

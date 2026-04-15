@@ -1,173 +1,105 @@
-const API = "http://localhost:3000/api/products";
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
 
-// ================= LOAD ALL PRODUCTS =================
-async function loadProducts() {
-  try {
-    const res = await fetch(API);
-    const data = await res.json();
-    display(data);
-  } catch (err) {
-    console.error("Error loading products:", err);
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// ================= MIDDLEWARE =================
+app.use(cors());
+app.use(express.json());
+
+// serve frontend folder
+app.use(express.static(path.join(__dirname, "bahian")));
+
+// ================= DATA =================
+let products = [
+  { id: 1, name: "Laptop", brand: "Dell", price: 45000, stock: 10 },
+  { id: 2, name: "Phone", brand: "Samsung", price: 20000, stock: 15 },
+  { id: 3, name: "Tablet", brand: "Apple", price: 30000, stock: 5 }
+];
+
+// ================= GET ALL =================
+app.get("/api/products", (req, res) => {
+  res.json(products);
+});
+
+// ================= ADD PRODUCT (FIXED) =================
+app.post("/api/products", (req, res) => {
+  const { name, brand, price, stock } = req.body;
+
+  if (!name || !brand || price == null || stock == null) {
+    return res.status(400).json({ message: "All fields required" });
   }
-}
 
-// ================= DISPLAY PRODUCTS =================
-function display(data) {
-  const list = document.getElementById("list");
-  list.innerHTML = "";
+  const newProduct = {
+    id: Date.now(),
+    name: name.trim(),
+    brand: brand.trim(),
+    price: Number(price),
+    stock: Number(stock)
+  };
 
-  data.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "card";
+  products.push(newProduct);
 
-    div.innerHTML = `
-      <div>
-        <b>${p.name}</b><br/>
-        Brand: ${p.brand}<br/>
-        ₱${p.price} | Stock: ${p.stock}
-      </div>
-
-      <div>
-        <button onclick="deleteProduct(${p.id})">Delete</button>
-        <button onclick="updateProduct(${p.id})">Update</button>
-      </div>
-    `;
-
-    list.appendChild(div);
+  return res.status(201).json({
+    message: "Product added successfully",
+    product: newProduct
   });
-}
+});
 
-// ================= ADD PRODUCT (FIXED BUG HERE) =================
-async function addProduct() {
-  const name = document.getElementById("name").value;
-  const brand = document.getElementById("brand").value;
-  const price = document.getElementById("price").value;
-  const stock = document.getElementById("stock").value;
+// ================= UPDATE =================
+app.put("/api/products/:id", (req, res) => {
+  const index = products.findIndex(p => p.id == req.params.id);
 
-  if (!name || !brand || !price || !stock) {
-    alert("Please fill in all fields!");
-    return;
+  if (index === -1) {
+    return res.status(404).json({ message: "Not found" });
   }
 
-  try {
-    const res = await fetch(API, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name,
-        brand,
-        price: Number(price),
-        stock: Number(stock)
-      })
-    });
+  products[index] = { ...products[index], ...req.body };
 
-    const data = await res.json();
-    console.log("Added:", data);
+  res.json(products[index]);
+});
 
-    // clear inputs
-    document.getElementById("name").value = "";
-    document.getElementById("brand").value = "";
-    document.getElementById("price").value = "";
-    document.getElementById("stock").value = "";
+// ================= DELETE =================
+app.delete("/api/products/:id", (req, res) => {
+  const index = products.findIndex(p => p.id == req.params.id);
 
-    loadProducts();
-  } catch (err) {
-    console.error("Error adding product:", err);
-  }
-}
-
-// ================= DELETE PRODUCT =================
-async function deleteProduct(id) {
-  try {
-    await fetch(`${API}/${id}`, {
-      method: "DELETE"
-    });
-
-    loadProducts();
-  } catch (err) {
-    console.error("Error deleting product:", err);
-  }
-}
-
-// ================= UPDATE PRODUCT =================
-async function updateProduct(id) {
-  const name = prompt("Enter new name:");
-  const brand = prompt("Enter new brand:");
-  const price = prompt("Enter new price:");
-  const stock = prompt("Enter new stock:");
-
-  if (!name || !brand || !price || !stock) {
-    alert("Update cancelled or incomplete input!");
-    return;
+  if (index === -1) {
+    return res.status(404).json({ message: "Not found" });
   }
 
-  try {
-    await fetch(`${API}/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        name,
-        brand,
-        price: Number(price),
-        stock: Number(stock)
-      })
-    });
+  products.splice(index, 1);
 
-    loadProducts();
-  } catch (err) {
-    console.error("Error updating product:", err);
-  }
-}
+  res.json({ message: "Deleted" });
+});
 
-// ================= SEARCH PRODUCT =================
-async function searchProduct() {
-  const name = document.getElementById("search").value;
+// ================= SEARCH =================
+app.get("/api/search", (req, res) => {
+  const name = req.query.name || "";
 
-  try {
-    const res = await fetch(`http://localhost:3000/api/search?name=${name}`);
-    const data = await res.json();
+  const result = products.filter(p =>
+    p.name.toLowerCase().includes(name.toLowerCase())
+  );
 
-    display(data);
-  } catch (err) {
-    console.error("Error searching product:", err);
-  }
-}
+  res.json(result);
+});
 
 // ================= STATS =================
-async function loadStats() {
-  try {
-    const res = await fetch("http://localhost:3000/api/stats");
-    const data = await res.json();
+app.get("/api/stats", (req, res) => {
+  res.json({
+    totalProducts: products.length,
+    totalStock: products.reduce((a, b) => a + b.stock, 0)
+  });
+});
 
-    document.getElementById("stats").innerText =
-      `Total Products: ${data.totalProducts} | Total Stock: ${data.totalStock}`;
-  } catch (err) {
-    console.error("Error loading stats:", err);
-  }
-}
+// ================= TOP =================
+app.get("/api/top", (req, res) => {
+  const sorted = [...products].sort((a, b) => b.price - a.price);
+  res.json(sorted.slice(0, 3));
+});
 
-// ================= TOP PRODUCTS =================
-async function loadTop() {
-  try {
-    const res = await fetch("http://localhost:3000/api/top");
-    const data = await res.json();
-
-    const list = document.getElementById("topList");
-    list.innerHTML = "";
-
-    data.forEach(p => {
-      const li = document.createElement("li");
-      li.textContent = `${p.name} - ₱${p.price}`;
-      list.appendChild(li);
-    });
-  } catch (err) {
-    console.error("Error loading top products:", err);
-  }
-}
-
-// ================= INIT =================
-loadProducts();
+// ================= SERVER =================
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

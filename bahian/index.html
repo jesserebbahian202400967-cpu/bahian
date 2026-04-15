@@ -1,57 +1,204 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <h1>Chair List</h1>
-    <button onclick="loadchairs()">Load All Chairs</button>
-    <ul id="list"></ul>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Product Inventory System</title>
 
-    <h1>Add Chair</h1>
-    <input type="text" id="name" placeholder="name" />
-    <input type="text" id="description" placeholder="description" />
-    <button onclick="addChair()">Submit</button>
-  </body>
+<link rel="stylesheet" href="style.css" />
+</head>
 
-  <script>
-    // Get all data list
-    async function loadchairs() {
-      // Fetch response from backend
-      const res = await fetch('http://localhost:3000/api/chairs');
-      // Parse response
-      const data = await res.json();
+<body>
 
-      const list = document.getElementById('list');
-      list.innerHTML = '';
+<div class="container">
 
-      data.forEach((chair) => {
-        const li = document.createElement('li');
-        li.textContent = ` - CHAIR NAME: ${chair.name} - CHAIR DESCRIPTION: ${chair.description}`;
-        list.appendChild(li);
-      });
-    }
+  <h1>📦 Product Inventory System</h1>
 
-    async function addChair() {
-      const name = document.getElementById('name').value;
-      const description = document.getElementById('description').value;
+  <!-- LOAD -->
+  <div class="section">
+    <button onclick="loadProducts()">Load Products</button>
+  </div>
 
-      const res = await fetch('http://localhost:3000/api/chairs', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, description }),
-      });
+  <!-- SEARCH -->
+  <div class="section">
+    <h3>Search Product</h3>
+    <input type="text" id="search" placeholder="Search name..." />
+    <button onclick="searchProduct()">Search</button>
+  </div>
 
-      const data = await res.json();
-      console.log(data);
+  <!-- STATS -->
+  <div class="section">
+    <h3>Stats</h3>
+    <button onclick="loadStats()">Load Stats</button>
+    <p id="stats"></p>
+  </div>
 
-      loadchairs();
-    }
-  </script>
+  <!-- TOP -->
+  <div class="section">
+    <h3>Top Products</h3>
+    <button onclick="loadTop()">Show Top</button>
+    <ul id="topList"></ul>
+  </div>
+
+  <hr />
+
+  <!-- PRODUCT LIST -->
+  <div id="list"></div>
+
+  <hr />
+
+  <!-- ADD PRODUCT -->
+  <div class="section">
+    <h3>Add Product</h3>
+
+    <input type="text" id="name" placeholder="Name" />
+    <input type="text" id="brand" placeholder="Brand" />
+    <input type="number" id="price" placeholder="Price" />
+    <input type="number" id="stock" placeholder="Stock" />
+
+    <button onclick="addProduct()">Add Product</button>
+  </div>
+
+</div>
+
+<script>
+
+const API = "http://localhost:3000/api/products";
+
+// ================= LOAD =================
+async function loadProducts() {
+  const res = await fetch(API);
+  const data = await res.json();
+  display(data);
+}
+
+// ================= DISPLAY =================
+function display(data) {
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  data.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "card";
+
+    div.innerHTML = `
+      <div>
+        <b>${p.name}</b><br/>
+        Brand: ${p.brand}<br/>
+        ₱${p.price} | Stock: ${p.stock}
+      </div>
+
+      <div>
+        <button onclick="deleteProduct(${p.id})">Delete</button>
+        <button onclick="updateProduct(${p.id})">Update</button>
+      </div>
+    `;
+
+    list.appendChild(div);
+  });
+}
+
+// ================= ADD (FIXED - THIS WAS YOUR ERROR) =================
+async function addProduct() {
+  const name = document.getElementById("name").value;
+  const brand = document.getElementById("brand").value;
+  const price = document.getElementById("price").value;
+  const stock = document.getElementById("stock").value;
+
+  if (!name || !brand || !price || !stock) {
+    alert("Please fill all fields!");
+    return;
+  }
+
+  await fetch(API, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      name,
+      brand,
+      price: Number(price),
+      stock: Number(stock)
+    })
+  });
+
+  // clear inputs
+  document.getElementById("name").value = "";
+  document.getElementById("brand").value = "";
+  document.getElementById("price").value = "";
+  document.getElementById("stock").value = "";
+
+  loadProducts();
+}
+
+// ================= DELETE =================
+async function deleteProduct(id) {
+  await fetch(`${API}/${id}`, { method: "DELETE" });
+  loadProducts();
+}
+
+// ================= UPDATE =================
+async function updateProduct(id) {
+  const name = prompt("New name:");
+  const brand = prompt("New brand:");
+  const price = prompt("New price:");
+  const stock = prompt("New stock:");
+
+  await fetch(`${API}/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      name,
+      brand,
+      price: Number(price),
+      stock: Number(stock)
+    })
+  });
+
+  loadProducts();
+}
+
+// ================= SEARCH =================
+async function searchProduct() {
+  const name = document.getElementById("search").value;
+
+  const res = await fetch(`http://localhost:3000/api/search?name=${name}`);
+  const data = await res.json();
+
+  display(data);
+}
+
+// ================= STATS =================
+async function loadStats() {
+  const res = await fetch("http://localhost:3000/api/stats");
+  const data = await res.json();
+
+  document.getElementById("stats").innerText =
+    `Total Products: ${data.totalProducts} | Total Stock: ${data.totalStock}`;
+}
+
+// ================= TOP =================
+async function loadTop() {
+  const res = await fetch("http://localhost:3000/api/top");
+  const data = await res.json();
+
+  const list = document.getElementById("topList");
+  list.innerHTML = "";
+
+  data.forEach(p => {
+    const li = document.createElement("li");
+    li.textContent = `${p.name} - ₱${p.price}`;
+    list.appendChild(li);
+  });
+}
+
+// INIT
+loadProducts();
+
+</script>
+
+</body>
 </html>

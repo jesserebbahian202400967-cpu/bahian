@@ -63,7 +63,8 @@
 
 <script>
 
-const API = "http://localhost:3000/api/products";
+// ✅ FIXED: use relative path (works on Render)
+const API = "/api/products";
 
 // ================= LOAD =================
 async function loadProducts() {
@@ -98,7 +99,7 @@ function display(data) {
   });
 }
 
-// ================= ✅ FIXED ADD PRODUCT =================
+// ================= ADD PRODUCT =================
 async function addProduct() {
   const name = document.getElementById("name").value;
   const brand = document.getElementById("brand").value;
@@ -162,7 +163,7 @@ async function updateProduct(id) {
 async function searchProduct() {
   const name = document.getElementById("search").value;
 
-  const res = await fetch(`http://localhost:3000/api/search?name=${name}`);
+  const res = await fetch(`/api/search?name=${name}`); // ✅ FIXED
   const data = await res.json();
 
   display(data);
@@ -170,7 +171,7 @@ async function searchProduct() {
 
 // ================= STATS =================
 async function loadStats() {
-  const res = await fetch("http://localhost:3000/api/stats");
+  const res = await fetch("/api/stats"); // ✅ FIXED
   const data = await res.json();
 
   document.getElementById("stats").innerText =
@@ -179,7 +180,7 @@ async function loadStats() {
 
 // ================= TOP =================
 async function loadTop() {
-  const res = await fetch("http://localhost:3000/api/top");
+  const res = await fetch("/api/top"); // ✅ FIXED
   const data = await res.json();
 
   const list = document.getElementById("topList");
